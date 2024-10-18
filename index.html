@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA School District Data Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <img src="assets/logo.png" alt="Logo" class="logo">
+        <h1>CA School District Data Explorer</h1>
+    </header>
+
+    <main class="content">
+        <p>Find trends, visualize data, and download datasets easily.</p>
+
+        <form id="searchForm" class="search-form">
+            <input type="text" id="searchInput" placeholder="Search dataset name..." autocomplete="off">
+            <button type="submit">Search</button>
+        </form>
+
+        <div id="searchResults" class="search-results"></div>
+
+        <section class="datasets">
+            <h2>Available Datasets</h2>
+            <ul>
+                <li>
+                    <a href="datasets/PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" download class="download-link">
+                        Download Property Tax Data (2019-20 to 2023-24)
+                    </a>
+                </li>
+                <li>
+                    <a href="datasets/PropertyTax_DataSet_20190513.xlsx" download class="download-link">
+                        Download Property Tax Data (2019-05-13)
+                    </a>
+                </li>
+                <li>
+                    <a href="datasets/testing_merge.csv" download class="download-link">
+                        Download Testing Merge (CSV)
+                    </a>
+                </li>
+                <li>
+                    <a href="datasets/testing_merge_ca_state_cont.csv" download class="download-link">
+                        Download Testing Merge (CA State Controller)
+                    </a>
+                </li>
+                <li>
+                    <a href="datasets/school-districts_lea_directory.csv" download class="download-link">
+                        Download School Districts LEA Directory (CSV)
+                    </a>
+                </li>
+                <li>
+                    <a href="datasets/Data.zip" download class="download-link">
+                        Download All Datasets (ZIP)
+                    </a>
+                </li>
+        
+                <!-- Visualization Links for All Datasets -->
+                <li>
+                    <a href="visualization.html?dataset=PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" class="download-link">
+                        Visualize Property Tax Data (2019-20 to 2023-24)
+                    </a>
+                </li>
+                <li>
+                    <a href="visualization.html?dataset=PropertyTax_DataSet_20190513.xlsx" class="download-link">
+                        Visualize Property Tax Data (2019-05-13)
+                    </a>
+                </li>
+                <li>
+                    <a href="visualization.html?dataset=testing_merge.csv" class="download-link">
+                        Visualize Testing Merge (CSV)
+                    </a>
+                </li>
+                <li>
+                    <a href="visualization.html?dataset=testing_merge_ca_state_cont.csv" class="download-link">
+                        Visualize Testing Merge (CA State Controller)
+                    </a>
+                </li>
+                <li>
+                    <a href="visualization.html?dataset=school-districts_lea_directory.csv" class="download-link">
+                        Visualize School Districts LEA Directory (CSV)
+                    </a>
+                </li>
+            </ul>
+        </section>        
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Practicum Global Plan - Group A</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
