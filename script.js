@@ -1,6 +1,5 @@
 // script.js
 
-// List of Datasets (Add your datasets here)
 const datasets = [
     {
         name: "Property Tax Data (2019-20 to 2023-24)",
@@ -28,9 +27,8 @@ const datasets = [
     }
 ];
 
-// Handle Search Form Submission
 document.getElementById('searchForm').addEventListener('submit', function (event) {
-    event.preventDefault(); // Prevent form refresh
+    event.preventDefault(); 
 
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
     const results = datasets.filter(dataset =>
@@ -40,18 +38,16 @@ document.getElementById('searchForm').addEventListener('submit', function (event
     displaySearchResults(results);
 });
 
-// Function to Display Search Results
 function displaySearchResults(results) {
     const searchResults = document.getElementById('searchResults');
-    searchResults.innerHTML = ""; // Clear previous results
+    searchResults.innerHTML = ""; 
 
     if (results.length === 0) {
         searchResults.innerHTML = "<p>No matching datasets found.</p>";
     } else {
-        const ul = document.createElement('ul'); // Create a list for results
+        const ul = document.createElement('ul'); 
 
         results.forEach(dataset => {
-            // Create a list item for download
             const downloadLi = document.createElement('li');
             downloadLi.innerHTML = `
                 <a href="datasets/${dataset.file}" download class="download-link">
@@ -60,7 +56,6 @@ function displaySearchResults(results) {
             `;
             ul.appendChild(downloadLi);
 
-            // Create a list item for visualization
             const visualizeLi = document.createElement('li');
             visualizeLi.innerHTML = `
                 <a href="visualization.html?dataset=${dataset.file}" class="download-link">
@@ -70,6 +65,6 @@ function displaySearchResults(results) {
             ul.appendChild(visualizeLi);
         });
 
-        searchResults.appendChild(ul); // Append the results to the search container
+        searchResults.appendChild(ul); 
     }
 }
