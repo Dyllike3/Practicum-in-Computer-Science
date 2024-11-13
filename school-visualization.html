@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>School District Data Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .search-panel {
+            width: 300px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .visualization-panel {
+            flex: 1;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 8px 8px 32px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+        .search-results {
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+        .district-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .district-id {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        select {
+            width: 200px;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 14px;
+            display: none;
+        }
+        .placeholder {
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        .selected-district {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .missing-data {
+            fill: red;
+        }
+        .missing-label {
+            font-size: 12px;
+            fill: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Search Panel -->
+        <div class="search-panel">
+            <h2>Search Districts</h2>
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID...">
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <!-- Visualization Panel -->
+        <div class="visualization-panel">
+            <h2>School District Data Visualization</h2>
+            <div id="selectedDistrict" class="selected-district" style="display: none;"></div>
+            <select id="attributeSelect"></select>
+            <div id="chartContainer">
+                <div id="placeholder" class="placeholder">
+                    Search and select a district to view data
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const margin = {top: 20, right: 30, bottom: 50, left: 60};
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        let parsedData = {};
+        let currentDistrict = null;
+
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        const attributeSelect = document.getElementById('attributeSelect');
+        const placeholder = document.getElementById('placeholder');
+        const selectedDistrictDiv = document.getElementById('selectedDistrict');
+
+        const tooltip = d3.select('body').append('div')
+            .attr('class', 'tooltip');
+
+        d3.csv("data_cleaned.csv").then(data => {
+            // Filter relevant attributes (excluding leaid and other non-relevant columns)
+            const relevantAttributes = Object.keys(data[0]).filter(key => 
+                !["year", "lea_id", "leaid", "phone", "lea_name", "urban_centric_locale", "fiscal year", "debt_shortterm_outstand_end_fy","payments_charter_schools",""].includes(key)
+            );
+
+            // Populate attribute dropdown (without blank option)
+            relevantAttributes.forEach((attr, index) => {
+                const option = document.createElement('option');
+                option.value = attr;
+                option.textContent = attr;
+                if (index === 0) option.selected = true; // Select first option by default
+                attributeSelect.appendChild(option);
+            });
+
+            data.forEach(d => {
+                d.year = +d.year;
+                relevantAttributes.forEach(attr => {
+                    d[attr] = d[attr] === "" ? null : +d[attr];  // Convert empty strings to null
+                });
+            });
+
+            parsedData = d3.group(data, d => `${d.lea_name} (${d.lea_id})`);
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                if (!query) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+
+                const matches = Array.from(parsedData.keys())
+                    .filter(district => 
+                        district.toLowerCase().includes(query) ||
+                        district.split('(')[1].replace(')', '').includes(query)
+                    )
+                    .slice(0, 5);
+
+                searchResults.innerHTML = '';
+                searchResults.style.display = matches.length ? 'block' : 'none';
+
+                matches.forEach(district => {
+                    const [name, id] = district.split('(');
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    div.innerHTML = `
+                        <div class="district-name">${name.trim()}</div>
+                        <div class="district-id">ID: ${id.replace(')', '')}</div>
+                    `;
+                    div.addEventListener('click', () => {
+                        currentDistrict = district;
+                        searchInput.value = '';
+                        searchResults.style.display = 'none';
+                        selectedDistrictDiv.textContent = `Selected District: ${district}`;
+                        selectedDistrictDiv.style.display = 'block';
+                        updateChart();
+                    });
+                    searchResults.appendChild(div);
+                });
+            });
+
+            attributeSelect.addEventListener('change', updateChart);
+            
+            // Initial chart update if needed
+            if (currentDistrict) {
+                updateChart();
+            }
+        });
+
+        function updateChart() {
+            const chartContainer = document.getElementById('chartContainer');
+            const selectedAttribute = attributeSelect.value;
+
+            if (!currentDistrict || !selectedAttribute) {
+                placeholder.style.display = 'flex';
+                return;
+            }
+
+            placeholder.style.display = 'none';
+            chartContainer.innerHTML = '';
+
+            const svg = d3.select('#chartContainer')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const data = parsedData.get(currentDistrict).map(d => ({
+                year: d.year,
+                value: d[selectedAttribute]
+            }));
+
+            const x = d3.scaleLinear()
+                .domain(d3.extent(data, d => d.year))
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.value)])
+                .range([height, 0]);
+
+            // Add X axis and label
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(data.length).tickFormat(d3.format('d')));
+            
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', height + margin.bottom - 10)
+                .style('text-anchor', 'middle')
+                .text('Year');
+
+            // Add Y axis and label
+            svg.append('g')
+                .call(d3.axisLeft(y));
+            
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -margin.left + 10)
+                .style('text-anchor', 'middle')
+                .text(selectedAttribute);
+
+            // Add line (only connecting non-null values)
+            const line = d3.line()
+                .x(d => x(d.year))
+                .y(d => y(d.value))
+                .defined(d => d.value !== null);  // Skip null values
+
+            svg.append('path')
+                .datum(data)
+                .attr('fill', 'none')
+                .attr('stroke', '#3b82f6')
+                .attr('stroke-width', 2)
+                .attr('d', line);
+
+            // Add dots
+            const dots = svg.selectAll('circle')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('cx', d => x(d.year))
+                .attr('cy', d => y(d.value))
+                .attr('r', 4)
+                .attr('fill', '#3b82f6');
+
+            // Add hover effects
+            dots.on('mouseover', (event, d) => {
+                tooltip.style('display', 'block')
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px')
+                    .html(`Year: ${d.year}<br>${selectedAttribute}: ${d.value}`);
+            })
+            .on('mouseout', () => {
+                tooltip.style('display', 'none');
+            });
+        }
+    </script>
+</body>
+</html>
