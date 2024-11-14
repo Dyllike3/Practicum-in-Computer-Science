@@ -1,96 +1,200 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CA School District Data Explorer</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>School District Data Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+        .left-panel {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .search-panel, .district-list-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .district-list {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .district-list-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .district-list-item:hover {
+            background: #f5f5f5;
+        }
+        .district-list-item.selected {
+            background: #e3f2fd;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .visualization-panel, .attributes-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .terminology-box {
+            position: absolute;
+            right: 20px;
+            width: 250px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .terminology-item {
+            margin-bottom: 10px;
+        }
+        .terminology-term {
+            font-weight: bold;
+            color: #2c5282;
+        }
+        .search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 8px 8px 32px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+        .search-results {
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        select {
+            width: 200px;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 14px;
+            display: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .selected-district {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .attribute-list {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            padding: 10px;
+        }
+        .attribute-item {
+            display: contents;
+        }
+        .attribute-label {
+            font-weight: bold;
+            padding-right: 20px;
+        }
+        .attribute-value {
+            text-align: right;
+        }
+        .chart-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .header-with-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-    <header class="navbar">
-        <img src="assets/logo.png" alt="Logo" class="logo">
-        <h1>CA School District Data Explorer</h1>
-    </header>
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="search-panel">
+                <h2>Search Districts</h2>
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by name or ID...">
+                </div>
+            </div>
 
-    <main class="content">
-        <p>Find trends, visualize data, and download datasets easily.</p>
+            <div class="district-list-panel">
+                <h2>All Districts</h2>
+                <div id="districtList" class="district-list"></div>
+            </div>
+        </div>
 
-        <form id="searchForm" class="search-form">
-            <input type="text" id="searchInput" placeholder="Search dataset name..." autocomplete="off">
-            <button type="submit">Search</button>
-        </form>
+        <div class="right-panel">
+            <div class="visualization-panel">
+                <h2>School District Data Visualization</h2>
+                <div id="selectedDistrict" class="selected-district" style="display: none;"></div>
+                <div class="chart-controls">
+                    <div>
+                        <label for="attributeSelect">Select Attribute: </label>
+                        <select id="attributeSelect"></select>
+                    </div>
+                </div>
+                <div id="chartContainer"></div>
+            </div>
 
-        <div id="searchResults" class="search-results"></div>
+            <div class="attributes-panel">
+                <div class="header-with-controls">
+                    <h2>All Attributes</h2>
+                    <div>
+                        <label for="yearSelect">Select Year: </label>
+                        <select id="yearSelect"></select>
+                    </div>
+                </div>
+                <div id="attributesList" class="attribute-list"></div>
+            </div>
+        </div>
 
-        <section class="datasets">
-            <h2>Available Datasets</h2>
-            <ul>
-                <li>
-                    <a href="datasets/PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" download class="download-link">
-                        Download Property Tax Data (2019-20 to 2023-24)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/PropertyTax_DataSet_20190513.xlsx" download class="download-link">
-                        Download Property Tax Data (2019-05-13)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/testing_merge.csv" download class="download-link">
-                        Download Testing Merge (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/testing_merge_ca_state_cont.csv" download class="download-link">
-                        Download Testing Merge (CA State Controller)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/school-districts_lea_directory.csv" download class="download-link">
-                        Download School Districts LEA Directory (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/Data.zip" download class="download-link">
-                        Download All Datasets (ZIP)
-                    </a>
-                </li>
-        
-                <!-- Visualization Links for All Datasets -->
-                <li>
-                    <a href="visualization.html?dataset=PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" class="download-link">
-                        Visualize Property Tax Data (2019-20 to 2023-24)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=PropertyTax_DataSet_20190513.xlsx" class="download-link">
-                        Visualize Property Tax Data (2019-05-13)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=testing_merge.csv" class="download-link">
-                        Visualize Testing Merge (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=testing_merge_ca_state_cont.csv" class="download-link">
-                        Visualize Testing Merge (CA State Controller)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=school-districts_lea_directory.csv" class="download-link">
-                        Visualize School Districts LEA Directory (CSV)
-                    </a>
-                </li>
-            </ul>
-        </section>        
-    </main>
-
-    <footer class="footer">
-        <p>&copy; 2024 Practicum Global Plan - Group A</p>
-    </footer>
-
+        <div class="terminology-box">
+            <h3>Terminology</h3>
+            <div id="terminologyList"></div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
