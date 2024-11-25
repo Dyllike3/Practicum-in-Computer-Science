@@ -1,96 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CA School District Data Explorer</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+ <!DOCTYPE html>
+ <html>
+ <head>
+    <meta name = "viewpoint" content = "width = device-width, initial-scale = 1.0">
+    <title> California University Finance Data </title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css">
+
 </head>
-<body>
-    <header class="navbar">
-        <img src="assets/logo.png" alt="Logo" class="logo">
-        <h1>CA School District Data Explorer</h1>
-    </header>
-
-    <main class="content">
-        <p>Find trends, visualize data, and download datasets easily.</p>
-
-        <form id="searchForm" class="search-form">
-            <input type="text" id="searchInput" placeholder="Search dataset name..." autocomplete="off">
-            <button type="submit">Search</button>
-        </form>
-
-        <div id="searchResults" class="search-results"></div>
-
-        <section class="datasets">
-            <h2>Available Datasets</h2>
+ <body>
+<section class="header">
+    <nav>
+        <a href="index.html"><img src="images/logo.png"></a>
+        <div class="nav-links" id="nav-links">
+            <i class="fa fa-times" onclick="hideMenu()"></i>
             <ul>
-                <li>
-                    <a href="datasets/PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" download class="download-link">
-                        Download Property Tax Data (2019-20 to 2023-24)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/PropertyTax_DataSet_20190513.xlsx" download class="download-link">
-                        Download Property Tax Data (2019-05-13)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/testing_merge.csv" download class="download-link">
-                        Download Testing Merge (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/testing_merge_ca_state_cont.csv" download class="download-link">
-                        Download Testing Merge (CA State Controller)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/school-districts_lea_directory.csv" download class="download-link">
-                        Download School Districts LEA Directory (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="datasets/Data.zip" download class="download-link">
-                        Download All Datasets (ZIP)
-                    </a>
-                </li>
-        
-                <!-- Visualization Links for All Datasets -->
-                <li>
-                    <a href="visualization.html?dataset=PropertyTax_DataSet_2019-20_to_2023-24_20240421_V1.xlsx" class="download-link">
-                        Visualize Property Tax Data (2019-20 to 2023-24)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=PropertyTax_DataSet_20190513.xlsx" class="download-link">
-                        Visualize Property Tax Data (2019-05-13)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=testing_merge.csv" class="download-link">
-                        Visualize Testing Merge (CSV)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=testing_merge_ca_state_cont.csv" class="download-link">
-                        Visualize Testing Merge (CA State Controller)
-                    </a>
-                </li>
-                <li>
-                    <a href="visualization.html?dataset=school-districts_lea_directory.csv" class="download-link">
-                        Visualize School Districts LEA Directory (CSV)
-                    </a>
-                </li>
+                <li><a href="index.html">HOME</a></li>
+                <li><a href="">USER GUIDE</a></li>
+                <li><a href="visualization.html">VISUALIZATION</a></li>
+                <li><a href="">UPDATE OUR DATABASE</a></li>
             </ul>
-        </section>        
-    </main>
+        </div>
+        <i class="fa fa-bars" onclick="showMenu()"></i>
+    </nav>
+<div class="text-box">
+    <h1>Uncovering CA School District Debt</h1>
+    <p>Between 2002 and 2018, school district debt in the United States surged by 112%, forcing cuts to critical resources like teachers and classrooms.<br> This platform empowers users to explore a first-of-its-kind dataset combining U.S. Census and California State Controller data to analyze the<br> causes and trends behind school district debt. Through interactive tools and accessible downloads, we aim to increase transparency<br> and provide insights to drive meaningful change.
 
-    <footer class="footer">
-        <p>&copy; 2024 Practicum Global Plan - Group A</p>
-    </footer>
+    </p>
+    <a href="Data.csv" download="Data.csv" class="hero-btn">Download the Dataset!</a>
 
-    <script src="script.js"></script>
-</body>
-</html>
+</div>
+</section>
+
+<!--Highlight-->
+
+<section class="highlight">
+    <h1>Key Statistics</h1>
+    <p>Take a look at some highlights</p>
+
+    <div class= "row">
+        <div class="highlight-col">
+            <h3>Growing Burden of Debt</h3>
+            <p>School district debt in the U.S. surged by 112% from 2002 to 2018, with 10-20% of budgets now spent on repayments, impacting classrooms and teachers.</p>
+        </div>
+        <div class="highlight-col">
+            <h3>Comprehensive Data Analysis</h3>
+            <p>This project analyzes 938 California school districts, combining U.S. Census and California State Controller data to uncover trends in borrowing, expenditures, and local property values.</p>
+        </div>
+        <div class="highlight-col">
+            <h3>Insights Through Time</h3>
+            <p>With data spanning over a decade since 2008, our tools provide unprecedented insights to identify the causes and patterns of growing school district debt.</p>
+        </div>
+</section>
+
+<!--
+
+<section class="campus">
+    <h1>Our Global Campus</h1>
+    <p>wafaw wfafwafaw wfafwa awfwafafwa wafawfwafa fwafafwa fwafa</p>
+
+    <div class="row">
+        <div class="campus-col">
+            <img src="images/london.png">
+            <div class="layer">
+                <h3>London</h3>
+            </div>
+        </div>
+        <div class="campus-col">
+            <img src="images/london.png">
+            <div class="layer">
+                <h3>NEWYORK</h3>
+            </div>
+        </div>
+        <div class="campus-col">
+            <img src="images/london.png">
+            <div class="layer">
+                <h3>WASHITON</h3>
+            </div>
+        </div>
+        
+    </div>
+
+</section>
+-->
+
+<!---Toggle Menu
+<script>
+
+    var navLinks = document.getElementById("navLinks");
+    
+    function showMenu(){
+        navLinks.style.right = "0";
+    }
+
+    function hideMenu(){
+        navLinks.style.right = "-200px";
+    }
+
+</script>
+-->
+
+ </body>
+ </html>
