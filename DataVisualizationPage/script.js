@@ -1,5 +1,5 @@
 // Constants
-const margin = {top: 20, right: 30, bottom: 50, left: 100};
+const margin = {top: 20, right: 120, bottom: 50, left: 100};
 const width = 800 - margin.left - margin.right;
 const height = 400 - margin.top - margin.bottom;
 
@@ -8,10 +8,11 @@ let parsedData = {};
 let currentDistrict = null;
 let allYears = [];
 let currentYear = null;
+let primaryAttributeSelect;
+let secondaryAttributeSelect;
 
 // DOM elements
 const searchInput = document.getElementById('searchInput');
-const attributeSelect = document.getElementById('attributeSelect');
 const yearSelect = document.getElementById('yearSelect');
 const districtList = document.getElementById('districtList');
 const selectedDistrictDiv = document.getElementById('selectedDistrict');
@@ -24,9 +25,27 @@ const minimizeButton = document.getElementById('minimizeButton');
 const tooltip = d3.select('body').append('div')
     .attr('class', 'tooltip');
 
+// Create chart controls HTML
+function addDualAxisControls() {
+    return `
+        <div class="chart-controls">
+            <div class="control-group">
+                <label for="primaryAttributeSelect">Primary Attribute (Left Axis): </label>
+                <select id="primaryAttributeSelect"></select>
+            </div>
+            <div class="control-group">
+                <label for="secondaryAttributeSelect">Secondary Attribute (Right Axis): </label>
+                <select id="secondaryAttributeSelect">
+                    <option value="">None (Single Axis)</option>
+                </select>
+            </div>
+        </div>
+    `;
+}
+
 // Terminology definitions
 const terminology = {
-    'Red Dot':'Missing Data',
+    'Black Dot': 'Missing Data',
     'Rev_total': 'Total revenue received by the school district from all sources (federal, state, and local)',
     'Rev_fed_total': 'Total federal revenue, including grants and program-specific funding',
     'Rev_state_total': 'Total revenue received from state sources, including state education funding',
@@ -92,13 +111,27 @@ d3.csv("data_cleaned.csv").then(data => {
         "debt_shortterm_outstand_end_fy","payments_charter_schools","name of school district",""].includes(key)
     );
 
-    // Populate attribute dropdown
-    attributeSelect.innerHTML = '';
+    // Initialize chart controls
+    const chartControlsDiv = document.getElementById('chartControls');
+    chartControlsDiv.innerHTML = addDualAxisControls();
+    
+    // Get references to the select elements
+    primaryAttributeSelect = document.getElementById('primaryAttributeSelect');
+    secondaryAttributeSelect = document.getElementById('secondaryAttributeSelect');
+
+    // Populate attribute dropdowns
     relevantAttributes.forEach((attr, index) => {
-        const option = document.createElement('option');
-        option.value = attr;
-        option.textContent = attr;
-        attributeSelect.appendChild(option);
+        // Primary attribute select
+        const primaryOption = document.createElement('option');
+        primaryOption.value = attr;
+        primaryOption.textContent = attr;
+        primaryAttributeSelect.appendChild(primaryOption);
+
+        // Secondary attribute select
+        const secondaryOption = document.createElement('option');
+        secondaryOption.value = attr;
+        secondaryOption.textContent = attr;
+        secondaryAttributeSelect.appendChild(secondaryOption);
     });
 
     // Process data
@@ -151,7 +184,8 @@ d3.csv("data_cleaned.csv").then(data => {
 
 function setupEventListeners() {
     searchInput.addEventListener('input', handleSearch);
-    attributeSelect.addEventListener('change', updateChart);
+    primaryAttributeSelect.addEventListener('change', updateChart);
+    secondaryAttributeSelect.addEventListener('change', updateChart);
     yearSelect.addEventListener('change', (e) => {
         currentYear = +e.target.value;
         updateAttributesList();
@@ -171,27 +205,45 @@ function handleSearch(e) {
 function selectDistrict(district) {
     currentDistrict = district;
     
-    // Update selected state in district list
     const items = districtList.getElementsByClassName('district-list-item');
     Array.from(items).forEach(item => {
         item.classList.toggle('selected', item.textContent === district);
     });
 
-    // Update selected district display
     selectedDistrictDiv.textContent = district;
     selectedDistrictDiv.style.display = 'block';
 
     updateChart();
     updateAttributesList();
 }
-
 function updateChart() {
     const chartContainer = document.getElementById('chartContainer');
-    const selectedAttribute = attributeSelect.value;
+    const primaryAttribute = primaryAttributeSelect.value;
+    const secondaryAttribute = secondaryAttributeSelect.value;
 
-    if (!currentDistrict || !selectedAttribute) return;
+    if (!currentDistrict || !primaryAttribute) return;
 
     chartContainer.innerHTML = '';
+
+    // Add summary section
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'chart-summary';
+    summaryDiv.innerHTML = `
+        <h3>Comparing:</h3>
+        <div class="metric-summary">
+            <div class="metric-item">
+                <span class="dot" style="background: #3b82f6"></span>
+                <span>${primaryAttribute}</span>
+            </div>
+            ${secondaryAttribute ? `
+                <div class="metric-item">
+                    <span class="dot" style="background: #ef4444"></span>
+                    <span>${secondaryAttribute}</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    chartContainer.appendChild(summaryDiv);
 
     const svg = d3.select('#chartContainer')
         .append('svg')
@@ -200,103 +252,200 @@ function updateChart() {
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Get the district's data and create a complete year range
+    // Get district data
     const districtData = parsedData.get(currentDistrict);
     const allYearPoints = allYears.map(year => {
         const yearData = districtData.find(d => d.year === year);
         return {
             year: year,
-            value: yearData ? yearData[selectedAttribute] : null
+            primary: yearData ? yearData[primaryAttribute] : null,
+            secondary: yearData && secondaryAttribute ? yearData[secondaryAttribute] : null
         };
     });
 
+    // Set up scales
     const x = d3.scaleLinear()
         .domain([d3.min(allYears), d3.max(allYears)])
         .range([0, width]);
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(allYearPoints, d => d.value)])
+    const y1 = d3.scaleLinear()
+        .domain([0, d3.max(allYearPoints, d => d.primary)])
         .range([height, 0]);
 
-    // Add X axis and label
+    let y2;
+    if (secondaryAttribute) {
+        y2 = d3.scaleLinear()
+            .domain([0, d3.max(allYearPoints, d => d.secondary)])
+            .range([height, 0]);
+    }
+
+    // Add axes
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x)
-            .ticks(allYears.length)
-            .tickFormat(d3.format('d')));
-    
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', height + margin.bottom - 10)
-        .style('text-anchor', 'middle')
-        .text('Year');
+        .call(d3.axisBottom(x).ticks(allYears.length).tickFormat(d3.format('d')));
 
-    // Add Y axis and label with formatted ticks
+    // Left Y axis
     svg.append('g')
-        .call(d3.axisLeft(y)
+        .call(d3.axisLeft(y1)
             .tickFormat(d => {
-                if (d >= 1000000) {
-                    return (d/1000000) + 'M';
-                } else if (d >= 1000) {
-                    return (d/1000) + 'K';
-                }
+                if (d >= 1000000) return (d/1000000) + 'M';
+                if (d >= 1000) return (d/1000) + 'K';
                 return d;
             }));
-    
-    svg.append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('x', -height / 2)
-        .attr('y', -margin.left + 30)
-        .style('text-anchor', 'middle')
-        .text(selectedAttribute);
 
-    // Add line connecting valid points
-    const line = d3.line()
+    // Right Y axis if secondary attribute selected
+    if (secondaryAttribute) {
+        svg.append('g')
+            .attr('transform', `translate(${width},0)`)
+            .call(d3.axisRight(y2)
+                .tickFormat(d => {
+                    if (d >= 1000000) return (d/1000000) + 'M';
+                    if (d >= 1000) return (d/1000) + 'K';
+                    return d;
+                }));
+    }
+
+    // Add legend
+    const legend = svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(${width + 20}, 0)`);
+
+    // Primary metric legend
+    legend.append('line')
+        .attr('x1', 0)
+        .attr('x2', 20)
+        .attr('y1', 10)
+        .attr('y2', 10)
+        .attr('stroke', '#3b82f6')
+        .attr('stroke-width', 2);
+
+    legend.append('text')
+        .attr('x', 25)
+        .attr('y', 13)
+        .text(primaryAttribute);
+
+    if (secondaryAttribute) {
+        // Secondary metric legend
+        legend.append('line')
+            .attr('x1', 0)
+            .attr('x2', 20)
+            .attr('y1', 30)
+            .attr('y2', 30)
+            .attr('stroke', '#ef4444')
+            .attr('stroke-width', 2)
+            .attr('stroke-dasharray', '5,5');
+
+        legend.append('text')
+            .attr('x', 25)
+            .attr('y', 33)
+            .text(secondaryAttribute);
+    }
+
+    // Add lines
+    const primaryLine = d3.line()
         .x(d => x(d.year))
-        .y(d => y(d.value))
-        .defined(d => d.value !== null);
+        .y(d => y1(d.primary))
+        .defined(d => d.primary !== null);
 
     svg.append('path')
-        .datum(allYearPoints.filter(d => d.value !== null))
+        .datum(allYearPoints.filter(d => d.primary !== null))
         .attr('fill', 'none')
         .attr('stroke', '#3b82f6')
         .attr('stroke-width', 2)
-        .attr('d', line);
+        .attr('d', primaryLine);
 
-    // Add dots
+    if (secondaryAttribute) {
+        const secondaryLine = d3.line()
+            .x(d => x(d.year))
+            .y(d => y2(d.secondary))
+            .defined(d => d.secondary !== null);
+
+        svg.append('path')
+            .datum(allYearPoints.filter(d => d.secondary !== null))
+            .attr('fill', 'none')
+            .attr('stroke', '#ef4444')
+            .attr('stroke-dasharray', '5,5')
+            .attr('stroke-width', 2)
+            .attr('d', secondaryLine);
+    }
+
+    // Add dots with enhanced tooltip
     allYearPoints.forEach(d => {
-        if (d.value === null) {
-            // Red dot for missing or invalid data
+        if (d.primary === null) {
             svg.append('circle')
                 .attr('cx', x(d.year))
                 .attr('cy', height/2)
                 .attr('r', 4)
-                .attr('fill', 'red');
-            
-            // svg.append('text')
-            //     .attr('x', x(d.year))
-            //     .attr('y', (height/2) - 10)
-            //     .attr('text-anchor', 'middle')
-            //     .attr('class', 'missing-label')
-            //     .text('Missing data');
+                .attr('fill', '#000');
         } else {
-            // Normal dot for valid data
             svg.append('circle')
                 .attr('cx', x(d.year))
-                .attr('cy', y(d.value))
+                .attr('cy', y1(d.primary))
                 .attr('r', 4)
                 .attr('fill', '#3b82f6')
                 .on('mouseover', function(event) {
+                    let tooltipContent = `
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Year:</span> ${d.year}
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label tooltip-primary">${primaryAttribute}:</span> ${d.primary}
+                        </div>`;
+                    
+                    if (secondaryAttribute && d.secondary !== null) {
+                        tooltipContent += `
+                            <div class="tooltip-row">
+                                <span class="tooltip-label tooltip-secondary">${secondaryAttribute}:</span> ${d.secondary}
+                            </div>`;
+                    }
+                    
                     tooltip.style('display', 'block')
                         .style('left', (event.pageX + 10) + 'px')
                         .style('top', (event.pageY - 10) + 'px')
-                        .html(`Year: ${d.year}<br>${selectedAttribute}: ${d.value}`);
+                        .html(tooltipContent);
                 })
-                .on('mouseout', function() {
-                    tooltip.style('display', 'none');
-                });
+                .on('mouseout', () => tooltip.style('display', 'none'));
+        }
+
+        if (secondaryAttribute) {
+            if (d.secondary === null) {
+                svg.append('circle')
+                    .attr('cx', x(d.year))
+                    .attr('cy', height/2)
+                    .attr('r', 4)
+                    .attr('fill', '#000');
+            } else {
+                svg.append('circle')
+                    .attr('cx', x(d.year))
+                    .attr('cy', y2(d.secondary))
+                    .attr('r', 4)
+                    .attr('fill', '#ef4444');
+            }
         }
     });
+
+    // Add axis labels
+    svg.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -height/2)
+        .attr('y', -margin.left + 30)
+        .style('text-anchor', 'middle')
+        .text(primaryAttribute);
+
+    if (secondaryAttribute) {
+        svg.append('text')
+            .attr('transform', 'rotate(90)')
+            .attr('x', height/2)
+            .attr('y', -width - margin.right + 40)
+            .style('text-anchor', 'middle')
+            .text(secondaryAttribute);
+    }
+
+    svg.append('text')
+        .attr('x', width/2)
+        .attr('y', height + margin.bottom - 10)
+        .style('text-anchor', 'middle')
+        .text('Year');
 }
 
 function updateAttributesList() {
@@ -306,7 +455,6 @@ function updateAttributesList() {
     attributesList.innerHTML = '';
 
     if (!yearData) {
-        // Handle case where no data exists for the selected year
         const div = document.createElement('div');
         div.className = 'attribute-item';
         div.style.gridColumn = '1 / -1';
@@ -317,12 +465,10 @@ function updateAttributesList() {
         return;
     }
 
-    // Get relevant attributes
     const attributes = Object.keys(yearData).filter(key => 
         !["year", "lea_id", "leaid", "phone", "lea_name", "urban_centric_locale"].includes(key)
     );
 
-    // Sort attributes alphabetically and create list
     attributes.sort().forEach(attr => {
         const value = yearData[attr];
         const div = document.createElement('div');
