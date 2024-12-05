@@ -105,7 +105,7 @@ function initializeTerminologyBox() {
 }
 
 // Load and process data
-d3.csv("data_cleaned.csv").then(data => {
+d3.csv("/static/Data.csv").then(data => {
     const relevantAttributes = Object.keys(data[0]).filter(key => 
         !["year", "lea_id", "leaid", "phone", "lea_name", "urban_centric_locale", "fiscal year", 
         "debt_shortterm_outstand_end_fy","payments_charter_schools","name of school district",""].includes(key)
