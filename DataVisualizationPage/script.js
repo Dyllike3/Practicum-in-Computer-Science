@@ -226,24 +226,29 @@ function updateChart() {
     chartContainer.innerHTML = '';
 
     // Add summary section
-    const summaryDiv = document.createElement('div');
-    summaryDiv.className = 'chart-summary';
-    summaryDiv.innerHTML = `
-        <h3>Comparing:</h3>
-        <div class="metric-summary">
-            <div class="metric-item">
-                <span class="dot" style="background: #3b82f6"></span>
-                <span>${primaryAttribute}</span>
-            </div>
-            ${secondaryAttribute ? `
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'chart-summary';
+        summaryDiv.style.marginLeft = '100px'; // Move it to the right
+        summaryDiv.innerHTML = `
+            <h3>Comparing:</h3>
+            <div class="metric-summary">
                 <div class="metric-item">
-                    <span class="dot" style="background: #ef4444"></span>
-                    <span>${secondaryAttribute}</span>
+                    <span class="dot" style="background: #3b82f6"></span>
+                    <span>${primaryAttribute}</span>
                 </div>
-            ` : ''}
-        </div>
-    `;
-    chartContainer.appendChild(summaryDiv);
+                ${secondaryAttribute ? `
+                    <div class="metric-item">
+                        <span class="dot" style="background: #ef4444"></span>
+                        <span>${secondaryAttribute}</span>
+                    </div>
+                ` : ''}
+                <div class="metric-item">
+                    <span class="dot" style="background: #000"></span>
+                    <span>Missing Data</span>
+                </div>
+            </div>
+        `;
+        chartContainer.appendChild(summaryDiv);
 
     const svg = d3.select('#chartContainer')
         .append('svg')
